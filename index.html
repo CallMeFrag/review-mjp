@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1, minimum-scale=1, maximum-scale=1">
+    <title>Recensioni dallo Studio</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DIN+Next:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'DIN Next', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1A1A1A;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 90%;
+            background: #2A2A2A;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #F4F4F4;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .review-form {
+            margin-top: 20px;
+        }
+
+        .stars {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .star {
+            font-size: 64px;
+            cursor: pointer;
+            color: #555;
+            transition: transform 0.2s;
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+        }
+
+        .star.selected {
+            color: #FFD700;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background-color: #333;
+            color: #F4F4F4;
+            font-size: 16px;
+            box-sizing: border-box;
+            font-family: 'DIN Next', sans-serif;
+        }
+
+        textarea {
+            height: 100px;
+            resize: none;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #B60000;
+            color: #FFFFFF;
+            font-size: 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+            font-family: 'DIN Next', sans-serif;
+        }
+
+        button:hover {
+            background-color: #FFFFFF;
+            color: #B60000;
+        }
+
+        .success-overlay, .error-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #FFD700;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .logo {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .logo img {
+            max-width: 150px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lascia una recensione!</h1>
+        <form class="review-form" id="reviewForm">
+            <div class="stars" id="stars">
+                <span class="star" data-value="1">&#9733;</span>
+                <span class="star" data-value="2">&#9733;</span>
+                <span class="star" data-value="3">&#9733;</span>
+                <span class="star" data-value="4">&#9733;</span>
+                <span class="star" data-value="5">&#9733;</span>
+            </div>
+            <div class="input-group">
+                <input type="text" id="reviewName" placeholder="Il tuo nome...">
+            </div>
+            <div class="input-group">
+                <textarea id="reviewText" placeholder="Scrivi la tua recensione..."></textarea>
+            </div>
+            <button type="submit">Invia Recensione</button>
+        </form>
+        <div class="success-overlay" id="successOverlay">
+            Grazie per la tua recensione! 🥳
+        </div>
+        <div class="error-overlay" id="errorOverlay">
+            Ooops! Controlla la tua recensione! ✍️<br> Per favore, usa termini più adeguati.
+        </div>
+        <div class="logo">
+            <img src="https://cdn.shopify.com/s/files/1/0707/5436/9820/files/Macedonia_png_metallo_luminoso.png?v=1738614875" alt="Logo Macedonia Jewels Piercing">
+        </div>
+    </div>
+
+    <script>
+        const stars = document.querySelectorAll('.star');
+        const reviewForm = document.getElementById('reviewForm');
+        const reviewText = document.getElementById('reviewText');
+        const reviewName = document.getElementById('reviewName');
+        const successOverlay = document.getElementById('successOverlay');
+        const errorOverlay = document.getElementById('errorOverlay');
+        let selectedRating = 0;
+
+        const prohibitedWords = [
+            "cazzo", "c4zzo", "c@zzo", "c@zz0", "c4zz0", "kazzo", "k4zzo", "k@zzo", "k@zz0", "k4zz0",
+            "caz*o", "c4z*o", "c*zzo", "c*zz0", "c@z*o", "k*zzo", "c@z@", "c*z@",
+            "merda", "m3rda", "m@rda", "m4rda",
+            "stronzo", "str0nzo", "str@nzo", "str0nz0", "stronz0",
+            "puttana", "p@ttana", "p4ttana", "putt@n@", "p@tt@n@",
+            "bastardo", "b@stardo", "b4stardo",
+            "frocio", "fr@cio", "fr0cio", "froci0", "fr@ci0",
+            "vaffanculo", "v4ffanculo", "vaff@nculo", "v4ff@nculo",
+            "negro", "n3gro", "n@gr@", "n3gr@",
+            "odio", "razzismo", "r@zzismo", "r4zzismo",
+            "bestemmia", "bestemm1@", "bestemmi@",
+            "coglione", "c0glione", "cogl1one", "cogl1on@", "c0glion@",
+            "testa di cazzo", "testa di c4zzo", "testa di c@zzo",
+            "drogato", "dr0gato", "drog@to", "drogat@",
+            "alcolizzato", "@lcolizzato", "4lcolizzato"
+        ];
+
+        function containsProhibitedWords(text) {
+            return prohibitedWords.some(word => new RegExp(word, 'gi').test(text));
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                selectedRating = star.getAttribute('data-value');
+                stars.forEach(s => s.classList.remove('selected'));
+                for (let i = 0; i < selectedRating; i++) {
+                    stars[i].classList.add('selected');
+                }
+            });
+        });
+
+        reviewForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            let name = reviewName.value.trim().split(' ')[0];
+            let message = reviewText.value.trim();
+
+            if (containsProhibitedWords(message)) {
+                reviewText.value = '';
+                errorOverlay.style.display = 'flex';
+                setTimeout(() => {
+                    errorOverlay.style.display = 'none';
+                }, 3000);
+                return;
+            }
+
+            if (selectedRating === 0 || message === '' || name === '') {
+                alert('Per favore, completa tutti i campi e lascia una valutazione.');
+                return;
+            }
+
+            // Simulazione dell'invio della recensione
+            console.log({
+                rating: selectedRating,
+                name: name,
+                message: message
+            });
+
+            reviewText.value = '';
+            reviewName.value = '';
+            stars.forEach(s => s.classList.remove('selected'));
+            selectedRating = 0;
+
+            // Mostra l'overlay di successo
+            successOverlay.style.display = 'flex';
+            setTimeout(() => {
+                successOverlay.style.display = 'none';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
